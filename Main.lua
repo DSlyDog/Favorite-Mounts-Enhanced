@@ -95,17 +95,30 @@ function orderedMount(arg)
 
 	current = MountIndexes[arg]
 	limit = #MountSet[arg]
+	attempts = 0
 
-	if current >= limit then
-		current = 1
-	else
+	while attempts < limit do
+		if current >= limit then
+			current = 1
+		else
+			current = current + 1
+		end
+
+		if MountSet[arg][current] ~= nil then
+			local _, _, _, _, isUsable = C_MountJournal.GetMountInfoByID(MountSet[arg][current])
+			if isUsable then
+				MountIndexes[arg] = current
+				C_MountJournal.SummonByID(MountSet[arg][current])
+				return
+			end
+		end
+
 		current = current + 1
+		attempts = attempts + 1
 	end
-	MountIndexes[arg] = current
 
-	if MountSet[arg][current] ~= nil then
-		C_MountJournal.SummonByID(MountSet[arg][current])
-	end
+	MountIndexes[arg] = current
+	print("No usable mounts found in that category")
 end
 
 function randomMount(arg)
@@ -121,8 +134,23 @@ function randomMount(arg)
 		print("You have not added any mounts")
 		return;
 	end
-	result = math.random(1, #MountSet[arg])
-	C_MountJournal.SummonByID(MountSet[arg][result])
+
+	local usableMounts = {}
+
+	for _, mountID in ipairs(MountSet[arg]) do
+		local _, _, _, _, isUsable = C_MountJournal.GetMountInfoByID(mountID)
+		if isUsable then
+			table.insert(usableMounts, mountID)
+		end
+	end
+
+	if #usableMounts == 0 then
+		print("No usable mounts in this category")
+		return
+	end
+
+	result = math.random(1, #usableMounts)
+	C_MountJournal.SummonByID(usableMounts[result])
 end
 
 function removeMount(category, selectedMounts)

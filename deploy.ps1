@@ -1,6 +1,6 @@
 # Set variables
-$SourceDir = "C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\Whisp's Mount Up - Dev"
-$ReleaseDir = "C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\Whisp's Mount Up"
+$SourceDir = "E:\Games\World of Warcraft\_retail_\Interface\AddOns\Whisp's Mount Up - Dev"
+$ReleaseDir = "E:\Games\World of Warcraft\_retail_\Interface\AddOns\Whisp's Mount Up"
 
 # List of files/folders to exclude from release
 $Excludes = @(

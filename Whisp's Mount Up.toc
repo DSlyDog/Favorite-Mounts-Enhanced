@@ -1,4 +1,4 @@
-## Interface: 110207
+## Interface: 120000
 ## Title: Whisp's Mount Up
 ## Version: 1.2.2.1
 ## Notes: Multiple favorites lists, and multiple ways to mount up
