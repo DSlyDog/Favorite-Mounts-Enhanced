@@ -212,6 +212,46 @@ deleteListButton:SetScript("OnClick", function()
     StaticPopup_Show("WHISPS_MOUNTUP_DELETE_LIST")
 end)
 
+local mountListFilterDropdown = CreateFrame("Frame", "WhispsMountupFilterFrame", MountUpFrame, "UIDropDownMenuTemplate")
+mountListFilterDropdown:SetPoint("TOP", buttonContainer, "BOTTOM", -15, -10)
+mountListFilterDropdown:Hide()
+
+local function InitializeMountListFilterDropdown(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+
+    local summonMethod = {
+        { text = "Alphabetical", value = "Alphabetical", description = "Sorts your mounts by name from A to Z" },
+        { text = "Reverse Alphabetical", value = "Reverse Alphabetical", description = "Sorts your mounts by name from Z to A"},
+        { text = "Newest to WoW", value = "Newest to WoW", description = "Sorts your mounts by when they were introduced" },
+    }
+
+    for _, method in ipairs(summonMethod) do
+        info.text = method.text
+        info.value = method.value
+        info.tooltipTitle = method.text
+        info.tooltipText = method.description
+        info.func = function(self)
+            UIDropDownMenu_SetSelectedValue(mountListFilterDropdown, self.value)
+            UIDropDownMenu_SetText(mountListFilterDropdown, self.value)
+            CloseDropDownMenus()
+            if mountListFilterDropdown.PopulateMounts then
+                mountListFilterDropdown.PopulateMounts()
+            end
+        end
+
+        info.checked = (UIDropDownMenu_GetSelectedValue(mountListFilterDropdown) == method)
+        info.notCheckable = false
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
+
+UIDropDownMenu_Initialize(mountListFilterDropdown, InitializeMountListFilterDropdown)
+UIDropDownMenu_SetWidth(mountListFilterDropdown, 160)
+UIDropDownMenu_SetButtonWidth(mountListFilterDropdown, 174)
+UIDropDownMenu_JustifyText(mountListFilterDropdown, "LEFT")
+UIDropDownMenu_SetSelectedValue(mountListFilterDropdown, nil)
+UIDropDownMenu_SetText(mountListFilterDropdown, "Sort type...")
+
 local mountListLabel = MountUpFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 mountListLabel:SetPoint("TOPLEFT", mountListDropdown, "BOTTOMLEFT", 20, -15)
 mountListLabel:SetText("Mounts in this list:")
@@ -324,6 +364,7 @@ function UpdateMountList(listName)
         return
     end
 
+    mountListFilterDropdown:Show()
     scrollFrame:Show()
     mountListLabel:Show()
     addMountButton:Show()
@@ -337,14 +378,42 @@ function UpdateMountList(listName)
         mountListLabel:SetText("Mounts in " .. listName .. ":")
     end
 
-    local buttonHeight = 30
-    local buttonWidth = scrollFrame:GetWidth() - 25
-    local yOffset = 0
+    mountListFilterDropdown.PopulateMounts = function()
+        for _, button in ipairs(mountButtons) do
+            button:Hide()
+        end
+        wipe(mountButtons)
 
-    for i, mountId in ipairs(mountIds) do
-        local name, spellId, icon = C_MountJournal.GetMountInfoByID(mountId)
+        local buttonHeight = 30
+        local buttonWidth = scrollFrame:GetWidth() - 25
+        local yOffset = 0
 
-        if name then
+        local sortedMounts = {}
+        for i, mountID in ipairs(mountIds) do
+            local name, spellID, icon, _, _, _, _, _, _, _, _, displayID = C_MountJournal.GetMountInfoByID(mountID)
+            local _, _, _, _, _, _, _, _, _, mountType = C_MountJournal.GetMountInfoExtraByID(mountID)
+            table.insert(sortedMounts, {id = mountID, name = name, icon = icon, mountType = mountType, displayID = displayID})
+        end
+
+        local selectedSortMethod = UIDropDownMenu_GetSelectedValue(mountListFilterDropdown)
+        if selectedSortMethod == "Alphabetical" then
+            table.sort(sortedMounts, function(a, b) return a.name < b.name end)
+        elseif selectedSortMethod == "Reverse Alphabetical" then
+            table.sort(sortedMounts, function(a, b) return a.name > b.name end)
+        elseif selectedSortMethod == "Newest to WoW" then
+            table.sort(sortedMounts, function(a, b)
+                if a.displayID ~= b.displayID then
+                    return a.displayID > b.displayID
+                end
+
+                return a.id > b.id
+            end)
+        end
+
+        local totalHeight = #sortedMounts * buttonHeight
+        contentFrame:SetHeight(totalHeight)
+
+        for i, mountInfo in ipairs(sortedMounts) do
             local button = CreateFrame("Button", "WhispsMountupMount" .. i, contentFrame, "BackdropTemplate")
             button:SetSize(buttonWidth, buttonHeight)
             button:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 5, -yOffset)
@@ -363,11 +432,11 @@ function UpdateMountList(listName)
             local iconTexture = button:CreateTexture(nil, "ARTWORK")
             iconTexture:SetSize(buttonHeight - 6, buttonHeight - 6)
             iconTexture:SetPoint("LEFT", button, "LEFT", 3, 0)
-            iconTexture:SetTexture(icon)
+            iconTexture:SetTexture(mountInfo.icon)
 
             local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             label:SetPoint("LEFT", iconTexture, "RIGHT", 8, 0)
-            label:SetText(name)
+            label:SetText(mountInfo.name)
             label:SetJustifyH("LEFT")
 
             button:SetScript("OnClick", function(self, buttonType, down)
@@ -375,12 +444,12 @@ function UpdateMountList(listName)
                     MountUpFrame.selectedMounts = {}
                 end
 
-                if MountUpFrame.selectedMounts[mountId] then
-                    MountUpFrame.selectedMounts[mountId] = nil
+                if MountUpFrame.selectedMounts[mountInfo.id] then
+                    MountUpFrame.selectedMounts[mountInfo.id] = nil
                     button:UnlockHighlight()
                     button.isHighlighted = false
                 else
-                    MountUpFrame.selectedMounts[mountId] = {id = mountId, name = name}
+                    MountUpFrame.selectedMounts[mountInfo.id] = {id = mountInfo.id, name = mountInfo.name}
                     button:LockHighlight()
                     button.isHighlighted = true
                 end
@@ -389,9 +458,9 @@ function UpdateMountList(listName)
             table.insert(mountButtons, button)
             yOffset = yOffset + buttonHeight + 2
         end
+        contentFrame:SetHeight(math.max(yOffset, scrollFrame:GetHeight()))
     end
-
-    contentFrame:SetHeight(math.max(yOffset, scrollFrame:GetHeight()))
+    mountListFilterDropdown.PopulateMounts()
 end
 
 -- Slash Commands

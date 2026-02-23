@@ -162,6 +162,9 @@ function removeMount(category, selectedMounts)
 		for i = #MountSet[category], 1, -1 do
 			if MountSet[category][i] == mountId then
 				table.remove(MountSet[category], i)
+				if MountIndexes[category] >= i then
+					MountIndexes[category] = MountIndexes[category] - 1
+				end
 				print("Successfully removed " .. mountInfo.name)
 				break
 			end

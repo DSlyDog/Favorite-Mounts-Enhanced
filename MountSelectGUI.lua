@@ -126,10 +126,10 @@ function ShowMountSelectionDialog(listName)
 
             local collectedMounts = {}
             for i, mountID in ipairs(mounts) do
-                local name, spellID, icon, _, _, _, _, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
+                local name, spellID, icon, _, _, _, _, _, _, _, isCollected, displayID = C_MountJournal.GetMountInfoByID(mountID)
                 local _, _, _, _, _, _, _, _, _, mountType = C_MountJournal.GetMountInfoExtraByID(mountID)
                 if isCollected then
-                    table.insert(collectedMounts, {id = mountID, name = name, icon = icon, mountType = mountType})
+                    table.insert(collectedMounts, {id = mountID, name = name, icon = icon, mountType = mountType, displayID = displayID})
                 end
             end
 
@@ -139,7 +139,13 @@ function ShowMountSelectionDialog(listName)
             elseif selectedSortMethod == "Reverse Alphabetical" then
                 table.sort(collectedMounts, function(a, b) return a.name > b.name end)
             elseif selectedSortMethod == "Newest to WoW" then
-                table.sort(collectedMounts, function(a, b) return a.id > b.id end)
+                table.sort(collectedMounts, function(a, b)
+                    if a.displayID ~= b.displayID then
+                        return a.displayID > b.displayID
+                    end
+
+                    return a.id > b.id
+                end)
             end
 
             local totalHeight = #collectedMounts * buttonHeight
