@@ -1,7 +1,7 @@
 function ShowMountSelectionDialog(listName)
     if not WhispsMountupSelectionFrame then
         local mountSelectFrame = CreateFrame("Frame", "WhispsMountupSelectionFrame", UIParent, "BackdropTemplate")
-        mountSelectFrame:SetSize(320, 450)
+        mountSelectFrame:SetSize(320, 470)
         mountSelectFrame:SetPoint("CENTER")
         mountSelectFrame:SetFrameStrata("DIALOG")
         mountSelectFrame:SetMovable(true)
@@ -87,8 +87,39 @@ function ShowMountSelectionDialog(listName)
         UIDropDownMenu_SetSelectedValue(mountListDropdown, nil)
         UIDropDownMenu_SetText(mountListDropdown, "Sort type...")
 
+        local searchBox = CreateFrame("EditBox", nil, mountSelectFrame, "InputBoxTemplate")
+        searchBox:SetSize(200, 20)
+        searchBox:SetPoint("TOP", mountListDropdown, "BOTTOM", 0, -5)
+        searchBox:SetAutoFocus(false)
+        searchBox:SetMaxLetters(80)
+        searchBox:SetFontObject(ChatFontNormal)
+        searchBox:SetFrameLevel(mountSelectFrame:GetFrameLevel() + 10)
+
+        local searchPlaceholder = searchBox:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+        searchPlaceholder:SetPoint("LEFT", searchBox, "LEFT", 5, 0)
+        searchPlaceholder:SetText("Search mounts...")
+
+        searchBox:SetScript("OnTextChanged", function(self)
+            if self:GetText() == "" then
+                searchPlaceholder:Show()
+            else
+                searchPlaceholder:Hide()
+            end
+            if mountSelectFrame.PopulateMounts then
+                mountSelectFrame.PopulateMounts()
+            end
+        end)
+        searchBox:SetScript("OnEscapePressed", function(self)
+            self.ClearFocus()
+        end)
+        searchBox:SetScript("OnEnterPressed", function(self)
+            self:ClearFocus()
+        end)
+
+        mountSelectFrame.searchBox = searchBox
+
         local scrollFrame = CreateFrame("ScrollFrame", nil, mountSelectFrame, "UIPanelScrollFrameTemplate")
-        scrollFrame:SetPoint("TOPLEFT", 15, -80)
+        scrollFrame:SetPoint("TOPLEFT", 15, -105)
         scrollFrame:SetPoint("BOTTOMRIGHT", -35, 50)
 
         local content = CreateFrame("Frame", nil, scrollFrame)
@@ -146,6 +177,18 @@ function ShowMountSelectionDialog(listName)
 
                     return a.id > b.id
                 end)
+            end
+
+            local searchText = mountSelectFrame.searchBox and mountSelectFrame.searchBox:GetText() or ""
+            if searchText ~= "" then
+                searchText = searchText:lower()
+                local filtered = {}
+                for _, mount in ipairs(collectedMounts) do
+                    if mount.name:lower():find(searchText, 1, true) then
+                        table.insert(filtered, mount)
+                    end
+                end
+                collectedMounts = filtered
             end
 
             local totalHeight = #collectedMounts * buttonHeight
