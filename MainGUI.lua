@@ -44,7 +44,7 @@ titleBar:SetBackdropColor(0.4, 0.4, 0.4, 1)
 
 local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 title:SetPoint("CENTER", titleBar, "CENTER", 0, 0)
-title:SetText("Whisp's MountUp")
+title:SetText("Manage Lists")
 
 local closeButton = CreateFrame("Button", nil, titleBar, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT", titleBar, "TOPRIGHT", 0, 0)

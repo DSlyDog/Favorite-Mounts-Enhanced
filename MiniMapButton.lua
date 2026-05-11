@@ -43,7 +43,7 @@ local WhispsMountupLauncher = ldb:NewDataObject("WhispsMountup", {
     end,
     OnTooltipShow = function(tooltip)
         if not tooltip or not tooltip.AddLine then return end
-        tooltip:AddLine("Whisp's Mount Up")
+        tooltip:AddLine("Favorite Mounts Enhanced")
         tooltip:AddLine("|cff00ff00Left-click:|r Open/close Summon Mounts panel", 1, 1, 1)
         tooltip:AddLine("|cffff8000Right-click:|r Open/close Settings", 1, 1, 1)
     end,
